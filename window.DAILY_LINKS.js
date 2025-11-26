@@ -1,0 +1,94 @@
+// Mapping and mask settings for daily links and tab cloaking.
+// This file is pure JS (no <script> wrapper) and should be included after daily-links.js
+
+// Enable masking by default so history/title appear like Google Slides
+window.MASK_AS_GOOGLE_SLIDES = true;
+// Customize these values if you want a different title or path
+window.MASK_TITLE = "Google Slides - Presentation"; // optional
+window.MASK_PATH = "/presentation/d/1FAKEID/edit"; // optional
+// Optional: set a neutral presentation favicon and theme color to complete the tab cloak.
+// Provide paths that exist in your site or a data: URL.
+window.MASK_FAVICON = "/favicon-presentation.svg"; // neutral presentation icon
+window.MASK_THEME_COLOR = "#ffffff";
+
+// Apply tab cloaking (title, history and favicon). This will run early when
+// `window.MASK_AS_GOOGLE_SLIDES` is true.
+(function () {
+  if (!window.MASK_AS_GOOGLE_SLIDES) return;
+
+  var maskTitle = window.MASK_TITLE || document.title || 'Presentation';
+  var maskPath = window.MASK_PATH || '/presentation/d/1FAKEID/edit';
+  var maskFavicon = window.MASK_FAVICON;
+  var maskTheme = window.MASK_THEME_COLOR;
+
+  try { history.replaceState({}, maskTitle, maskPath); } catch (e) { }
+  try { document.title = maskTitle; } catch (e) { }
+
+  // Override pushState to keep mask for later navigations
+  try {
+    var _origPush = history.pushState.bind(history);
+    history.pushState = function (state, title, url) {
+      var masked = maskPath;
+      if (typeof url === 'string' && url.length) {
+        if (url.indexOf('?') === 0) masked = maskPath + url;
+        else masked = maskPath + '?' + url;
+      }
+      try {
+        _origPush(state, maskTitle, masked);
+        document.title = maskTitle;
+      } catch (e) {
+        _origPush(state, title, url);
+      }
+    };
+  } catch (e) { }
+
+  window.addEventListener('popstate', function () { try { document.title = maskTitle; } catch (e) { } });
+
+  // Favicon
+  if (maskFavicon) {
+    try {
+      var link = document.querySelector('link[rel~="icon"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = maskFavicon;
+    } catch (e) { }
+  }
+
+  // theme-color meta
+  if (maskTheme) {
+    try {
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        document.head.appendChild(meta);
+      }
+      meta.content = maskTheme;
+    } catch (e) { }
+  }
+
+  // Expose undo helper
+  window.UNMASK_TAB = function () {
+    try { history.replaceState({}, document.title || '', '/'); } catch (e) { }
+  };
+})();
+
+// Replace all anchors on the page with today's provider URL
+window.DAILY_REPLACE_ALL = true;
+// When true, internal links (same-host or relative) that have target="_blank"
+// will also be replaced by the daily provider URL. Set to false to preserve
+// internal links even when they open in a new tab.
+window.DAILY_REPLACE_INTERNAL_BLANK = true;
+// Which mapping group to use when replacing all anchors.
+window.DAILY_DEFAULT_GROUP = "stream-providers";
+
+registerDailyLinks({
+  "stream-providers": [
+    "https://providerA.example/watch",
+    "https://providerB.example/watch",
+    "https://providerC.example/watch"
+  ]
+});
