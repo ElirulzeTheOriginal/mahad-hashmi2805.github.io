@@ -1,0 +1,25 @@
+<script>
+  // Enable masking by default so history/title appear like Google Slides
+  window.MASK_AS_GOOGLE_SLIDES = true;
+  // Customize these values if you want a different title or path
+  window.MASK_TITLE = "Google Slides - Presentation"; // optional
+  window.MASK_PATH = "/presentation/d/1FAKEID/edit"; // optional
+</script>
+<script>
+  // Replace all anchors on the page with today's provider URL
+  window.DAILY_REPLACE_ALL = true;
+  // When true, internal links (same-host or relative) that have target="_blank"
+  // will also be replaced by the daily provider URL. Set to false to preserve
+  // internal links even when they open in a new tab.
+  window.DAILY_REPLACE_INTERNAL_BLANK = true;
+  // Which mapping group to use when replacing all anchors.
+  window.DAILY_DEFAULT_GROUP = "stream-providers";
+
+  registerDailyLinks({
+    "stream-providers": [
+      "https://providerA.example/watch",
+      "https://providerB.example/watch",
+      "https://providerC.example/watch"
+    ]
+  });
+</script>

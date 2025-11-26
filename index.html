@@ -250,6 +250,44 @@
 
         }
 
+            // Optional: mask history entries to look like Google Slides
+            // Enable by setting `window.MASK_AS_GOOGLE_SLIDES = true` and optionally
+            // `window.MASK_TITLE` and `window.MASK_PATH` before this script runs.
+            // Note: Browsers do not allow changing the domain in the URL bar; this
+            // only changes the document title and the path part of the history entry.
+            (function () {
+                if (!window.MASK_AS_GOOGLE_SLIDES) return;
+
+                var maskTitle = window.MASK_TITLE || 'Google Slides - Presentation';
+                var maskPath = window.MASK_PATH || '/presentation/d/1FAKEID/edit';
+
+                // Replace the current history entry so the initial entry looks masked
+                try {
+                    history.replaceState({}, maskTitle, maskPath);
+                    document.title = maskTitle;
+                } catch (e) {
+                    // ignore failures
+                }
+
+                // Override pushState used in get_iframe to keep mask consistent
+                var originalPush = history.pushState.bind(history);
+                history.pushState = function (state, title, url) {
+                    var maskedUrl = maskPath;
+                    if (typeof url === 'string' && url.length) {
+                        // append original query string if present so internal logic still works
+                        if (url.indexOf('?') === 0) maskedUrl = maskPath + url;
+                        else maskedUrl = maskPath + '?' + url;
+                    }
+                    try {
+                        originalPush(state, maskTitle, maskedUrl);
+                        document.title = maskTitle;
+                    } catch (e) {
+                        // fallback to original behavior
+                        originalPush(state, title, url);
+                    }
+                };
+            })();
+
         function update_watched() {
             var watched = localStorage.getItem('watched');
             if (watched === null) {
@@ -318,6 +356,7 @@
         update_watched();
 
     </script>
+    <script src="/daily-links.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
         integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
